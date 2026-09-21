@@ -1,296 +1,200 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+/* =========================================
+   UTILITIES
+   ========================================= */
+.hide {
+  display: none !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
 }
 
-body {
-  margin: 0;
+/* =========================================
+   PAPAN GRID & KOTAK (3D EFFECT)
+   ========================================= */
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  grid-template-rows: repeat(10, 1fr);
+  padding: 4px; /* Memberi jarak agar kotak tidak mentok ke garis luar */
+  background: #166534; /* Warna dasar papan */
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
-}
-
-.counter {
-  font-size: 16px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-  margin-bottom: 24px;
-
-  &:hover {
-    border-color: var(--accent-border);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-}
-
-.hero {
-  position: relative;
-
-  .base,
-  .framework,
-  .vite {
-    inset-inline: 0;
-    margin: 0 auto;
-  }
-
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
-
-  .framework,
-  .vite {
-    position: absolute;
-  }
-
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
-  }
-
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
-  }
-}
-
-#app {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+.cell {
   box-sizing: border-box;
-}
-
-#center {
   display: flex;
-  flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
-
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
-}
-
-#next-steps {
-  display: flex;
-  border-top: 1px solid var(--border);
-  text-align: left;
-
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
-  }
-
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
-}
-
-#docs {
-  border-right: 1px solid var(--border);
-
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-}
-
-#next-steps ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
-
-  .logo {
-    height: 18px;
-  }
-
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
-    }
-
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-  }
-}
-
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
-}
-
-.ticks {
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: clamp(0.7rem, 2vw, 1.2rem);
   position: relative;
+  z-index: 1;
+  border-radius: 6px; /* Kotak melengkung */
+  margin: 1px; /* Celah antar kotak ala game board asli */
+  box-shadow:
+    inset -2px -2px 5px rgba(0, 0, 0, 0.1),
+    inset 2px 2px 5px rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+/* Warna Kotak Biasa */
+.cell:nth-child(even) {
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  color: #94a3b8;
+}
+.cell:nth-child(odd) {
+  background: linear-gradient(135deg, #f1f5f9, #cbd5e1);
+  color: #64748b;
+}
+
+/* =========================================
+   KOTAK SPESIAL: TANTANGAN & BONUS
+   ========================================= */
+.cell.question {
+  background: linear-gradient(135deg, #fef08a, #eab308) !important;
+  color: #713f12;
+  border: 1px solid #ca8a04;
+  animation: pulse-yellow 2s infinite;
+}
+/* Watermark Ikon Pertanyaan */
+.cell.question::before {
+  content: "❓";
+  position: absolute;
+  font-size: clamp(1.5rem, 3.5vw, 2.5rem);
+  opacity: 0.2;
+  transform: rotate(-15deg);
+}
+
+.cell.bonus {
+  background: linear-gradient(135deg, #bfdbfe, #3b82f6) !important;
+  color: #ffffff;
+  border: 1px solid #2563eb;
+  animation: pulse-blue 2s infinite;
+}
+/* Watermark Ikon Bonus */
+.cell.bonus::before {
+  content: "🎁";
+  position: absolute;
+  font-size: clamp(1.5rem, 3.5vw, 2.5rem);
+  opacity: 0.25;
+  transform: rotate(10deg);
+}
+
+@keyframes pulse-yellow {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(234, 179, 8, 0.7),
+      inset -2px -2px 5px rgba(0, 0, 0, 0.1);
+  }
+  70% {
+    box-shadow:
+      0 0 0 5px rgba(234, 179, 8, 0),
+      inset -2px -2px 5px rgba(0, 0, 0, 0.1);
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(234, 179, 8, 0),
+      inset -2px -2px 5px rgba(0, 0, 0, 0.1);
+  }
+}
+@keyframes pulse-blue {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(59, 130, 246, 0.7),
+      inset -2px -2px 5px rgba(0, 0, 0, 0.1);
+  }
+  70% {
+    box-shadow:
+      0 0 0 5px rgba(59, 130, 246, 0),
+      inset -2px -2px 5px rgba(0, 0, 0, 0.1);
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(59, 130, 246, 0),
+      inset -2px -2px 5px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* =========================================
+   BIDAK & DADU
+   ========================================= */
+.pawn {
+  position: absolute;
+  width: 7%;
+  height: 7%;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow:
+    0 5px 8px rgba(0, 0, 0, 0.4),
+    inset 0 -3px 4px rgba(0, 0, 0, 0.3);
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(0.5rem, 1.8vw, 1.1rem);
+  z-index: 20;
+}
+
+@keyframes hopAnimation {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -80%) scale(1.3) rotate(15deg);
+    box-shadow: 0 15px 20px rgba(0, 0, 0, 0.3);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow: 0 5px 8px rgba(0, 0, 0, 0.4);
+  }
+}
+.pawn.hopping {
+  animation: hopAnimation 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.dice-container {
+  width: 60px;
+  height: 60px;
+  perspective: 600px;
+}
+.dice {
   width: 100%;
-
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  background: white;
+  border-radius: 14px;
+  box-shadow:
+    0 8px 15px rgba(0, 0, 0, 0.2),
+    inset 0 0 15px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #166534;
+  border: 2px solid #e2e8f0;
+}
+.dice.rolling {
+  animation: rollDice 0.5s linear infinite;
+}
+@keyframes rollDice {
+  0% {
+    transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
   }
-
-  &::before {
-    left: 0;
-    border-left-color: var(--border);
+  50% {
+    transform: rotateX(180deg) rotateY(180deg) rotateZ(90deg);
   }
-  &::after {
-    right: 0;
-    border-right-color: var(--border);
+  100% {
+    transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg);
   }
 }
