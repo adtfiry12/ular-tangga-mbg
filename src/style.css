@@ -17,16 +17,17 @@
 }
 
 /* =========================================
-   PAPAN GRID & KOTAK (3D EFFECT)
+   PAPAN GRID & KOTAK (PERFORMA TINGGI)
    ========================================= */
 .board-grid {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
   grid-template-rows: repeat(10, 1fr);
-  padding: 4px; /* Memberi jarak agar kotak tidak mentok ke garis luar */
-  background: #166534; /* Warna dasar papan */
+  padding: 4px;
+  background: #166534;
 }
 
+/* KOTAK - Dibuat flat namun dengan gradien agar tetap cantik dan tidak bikin lag */
 .cell {
   box-sizing: border-box;
   display: flex;
@@ -36,16 +37,10 @@
   font-size: clamp(0.7rem, 2vw, 1.2rem);
   position: relative;
   z-index: 1;
-  border-radius: 6px; /* Kotak melengkung */
-  margin: 1px; /* Celah antar kotak ala game board asli */
-  box-shadow:
-    inset -2px -2px 5px rgba(0, 0, 0, 0.1),
-    inset 2px 2px 5px rgba(255, 255, 255, 0.8);
-  transition: all 0.3s ease;
+  border-radius: 4px;
+  margin: 1px;
   overflow: hidden;
 }
-
-/* Warna Kotak Biasa */
 .cell:nth-child(even) {
   background: linear-gradient(135deg, #f8fafc, #e2e8f0);
   color: #94a3b8;
@@ -56,70 +51,43 @@
 }
 
 /* =========================================
-   KOTAK SPESIAL: TANTANGAN & BONUS
+   KOTAK SPESIAL - ANIMASI RINGAN (GPU ACCELERATED)
    ========================================= */
 .cell.question {
   background: linear-gradient(135deg, #fef08a, #eab308) !important;
   color: #713f12;
-  border: 1px solid #ca8a04;
-  animation: pulse-yellow 2s infinite;
 }
-/* Watermark Ikon Pertanyaan */
 .cell.question::before {
   content: "❓";
   position: absolute;
   font-size: clamp(1.5rem, 3.5vw, 2.5rem);
-  opacity: 0.2;
+  opacity: 0.3;
   transform: rotate(-15deg);
+  animation: pulse-opacity 2s infinite alternate; /* Animasi ringan */
 }
 
 .cell.bonus {
   background: linear-gradient(135deg, #bfdbfe, #3b82f6) !important;
   color: #ffffff;
-  border: 1px solid #2563eb;
-  animation: pulse-blue 2s infinite;
 }
-/* Watermark Ikon Bonus */
 .cell.bonus::before {
   content: "🎁";
   position: absolute;
   font-size: clamp(1.5rem, 3.5vw, 2.5rem);
-  opacity: 0.25;
+  opacity: 0.3;
   transform: rotate(10deg);
+  animation: pulse-opacity 2.5s infinite alternate; /* Animasi ringan */
 }
 
-@keyframes pulse-yellow {
+/* Animasi opacity & scale ini sangat mulus di HP */
+@keyframes pulse-opacity {
   0% {
-    box-shadow:
-      0 0 0 0 rgba(234, 179, 8, 0.7),
-      inset -2px -2px 5px rgba(0, 0, 0, 0.1);
-  }
-  70% {
-    box-shadow:
-      0 0 0 5px rgba(234, 179, 8, 0),
-      inset -2px -2px 5px rgba(0, 0, 0, 0.1);
+    opacity: 0.1;
+    transform: scale(0.9);
   }
   100% {
-    box-shadow:
-      0 0 0 0 rgba(234, 179, 8, 0),
-      inset -2px -2px 5px rgba(0, 0, 0, 0.1);
-  }
-}
-@keyframes pulse-blue {
-  0% {
-    box-shadow:
-      0 0 0 0 rgba(59, 130, 246, 0.7),
-      inset -2px -2px 5px rgba(0, 0, 0, 0.1);
-  }
-  70% {
-    box-shadow:
-      0 0 0 5px rgba(59, 130, 246, 0),
-      inset -2px -2px 5px rgba(0, 0, 0, 0.1);
-  }
-  100% {
-    box-shadow:
-      0 0 0 0 rgba(59, 130, 246, 0),
-      inset -2px -2px 5px rgba(0, 0, 0, 0.1);
+    opacity: 0.4;
+    transform: scale(1.1);
   }
 }
 
@@ -132,9 +100,7 @@
   height: 7%;
   border-radius: 50%;
   border: 2px solid white;
-  box-shadow:
-    0 5px 8px rgba(0, 0, 0, 0.4),
-    inset 0 -3px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3); /* Bayangan diringankan */
   transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
@@ -149,11 +115,11 @@
   }
   50% {
     transform: translate(-50%, -80%) scale(1.3) rotate(15deg);
-    box-shadow: 0 15px 20px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
   }
   100% {
     transform: translate(-50%, -50%) scale(1);
-    box-shadow: 0 5px 8px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
   }
 }
 .pawn.hopping {
@@ -173,9 +139,7 @@
   transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   background: white;
   border-radius: 14px;
-  box-shadow:
-    0 8px 15px rgba(0, 0, 0, 0.2),
-    inset 0 0 15px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Bayangan dadu diringankan */
   display: flex;
   align-items: center;
   justify-content: center;

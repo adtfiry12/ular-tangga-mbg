@@ -34,6 +34,7 @@ let isMoving = false;
 let roomCode = "";
 let pendingQuestion = null;
 let consecutiveSixes = 0;
+let pendingPlayersSync = null; // Menampung sinkronisasi jika data masuk saat animasi berjalan
 
 try {
   const app = initializeApp(firebaseConfig);
@@ -209,18 +210,21 @@ window.switchTab = function (mode) {
     document.getElementById("setup-" + t).classList.add("hide");
     document
       .getElementById("tab-" + t)
-      .classList.replace("text-green-600", "text-gray-400");
+      .classList.replace("text-green-600", "text-slate-500");
     document
       .getElementById("tab-" + t)
-      .classList.replace("border-green-600", "border-transparent");
+      .classList.replace("bg-green-500", "bg-transparent");
+    document
+      .getElementById("tab-" + t)
+      .classList.replace("text-white", "text-slate-500");
   });
   document.getElementById("setup-" + mode).classList.remove("hide");
   document
     .getElementById("tab-" + mode)
-    .classList.replace("text-gray-400", "text-green-600");
+    .classList.replace("text-slate-500", "text-white");
   document
     .getElementById("tab-" + mode)
-    .classList.replace("border-transparent", "border-green-600");
+    .classList.replace("bg-transparent", "bg-green-500");
 };
 
 window.updatePlayerInputs = function () {
@@ -232,7 +236,7 @@ window.updatePlayerInputs = function () {
     container.innerHTML += `
       <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl text-white shadow-sm" style="background-color: ${PAWN_COLORS[i - 1]}">${PAWN_ICONS[i - 1]}</div>
-          <input type="text" id="p-name-${i - 1}" value="${isBot ? "Komputer" : `Player ${i}`}" ${isBot ? "disabled" : ""} class="flex-grow bg-gray-50 border border-gray-300 rounded-lg p-2 font-bold outline-none" maxlength="12">
+          <input type="text" id="p-name-${i - 1}" value="${isBot ? "Komputer" : `Player ${i}`}" ${isBot ? "disabled" : ""} class="flex-grow bg-slate-50 border-2 border-slate-200 rounded-xl p-3 font-bold outline-none focus:border-green-500 transition" maxlength="12">
       </div>`;
   }
 };
@@ -266,6 +270,7 @@ function initGameUI() {
   currentPlayerIndex = 0;
   isMoving = false;
   consecutiveSixes = 0;
+  pendingPlayersSync = null;
   if (gameMode === "online") {
     document.getElementById("room-info").classList.remove("hide");
     document.getElementById("game-room-code").innerText = roomCode;
@@ -306,69 +311,50 @@ function drawConnections() {
   const svg = document.getElementById("svg-layer");
   if (!svg) return;
 
-  // Tambahkan efek bayangan (Drop Shadow) untuk ular dan tangga agar tampak timbul
-  let svgStr = `<defs>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0.5" dy="1" stdDeviation="0.8" flood-opacity="0.6"/>
-    </filter>
-  </defs>`;
-
-  // 1. MENGGAMBAR TANGGA (Ladders)
+  let svgStr = "";
   for (let [s, e] of Object.entries(LADDERS)) {
     let p1 = getCoords(s),
       p2 = getCoords(e);
     let x1 = p1.x * 10 + 5,
-      y1 = p1.y * 10 + 5;
-    let x2 = p2.x * 10 + 5,
+      y1 = p1.y * 10 + 5,
+      x2 = p2.x * 10 + 5,
       y2 = p2.y * 10 + 5;
-
-    // Kalkulasi jarak dan kemiringan
     let dx = x2 - x1,
       dy = y2 - y1;
     let angle = Math.atan2(dy, dx);
-    let offsetX = Math.cos(angle + Math.PI / 2) * 1.8; // Lebar tiang tangga
+    let offsetX = Math.cos(angle + Math.PI / 2) * 1.8;
     let offsetY = Math.sin(angle + Math.PI / 2) * 1.8;
 
-    // Gambar 2 Tiang Utama (Rails)
-    svgStr += `<line x1="${x1 - offsetX}" y1="${y1 - offsetY}" x2="${x2 - offsetX}" y2="${y2 - offsetY}" stroke="#78350f" stroke-width="1.2" filter="url(#shadow)" stroke-linecap="round"/>`;
-    svgStr += `<line x1="${x1 + offsetX}" y1="${y1 + offsetY}" x2="${x2 + offsetX}" y2="${y2 + offsetY}" stroke="#78350f" stroke-width="1.2" filter="url(#shadow)" stroke-linecap="round"/>`;
+    svgStr += `<line x1="${x1 - offsetX}" y1="${y1 - offsetY}" x2="${x2 - offsetX}" y2="${y2 - offsetY}" stroke="#78350f" stroke-width="1.2" stroke-linecap="round"/>`;
+    svgStr += `<line x1="${x1 + offsetX}" y1="${y1 + offsetY}" x2="${x2 + offsetX}" y2="${y2 + offsetY}" stroke="#78350f" stroke-width="1.2" stroke-linecap="round"/>`;
 
-    // Gambar Pijakan (Anak Tangga/Rungs)
     let dist = Math.sqrt(dx * dx + dy * dy);
-    let steps = Math.floor(dist / 3.5); // Kerapatan pijakan
+    let steps = Math.floor(dist / 3.5);
     for (let i = 1; i <= steps; i++) {
       let px = x1 + (dx * i) / (steps + 1);
       let py = y1 + (dy * i) / (steps + 1);
-      svgStr += `<line x1="${px - offsetX}" y1="${py - offsetY}" x2="${px + offsetX}" y2="${py + offsetY}" stroke="#92400e" stroke-width="0.9" filter="url(#shadow)"/>`;
+      svgStr += `<line x1="${px - offsetX}" y1="${py - offsetY}" x2="${px + offsetX}" y2="${py + offsetY}" stroke="#92400e" stroke-width="0.9"/>`;
     }
   }
 
-  // 2. MENGGAMBAR ULAR (Snakes)
   for (let [s, e] of Object.entries(SNAKES)) {
     let p1 = getCoords(s),
       p2 = getCoords(e);
     let x1 = p1.x * 10 + 5,
-      y1 = p1.y * 10 + 5; // Kepala Ular
-    let x2 = p2.x * 10 + 5,
-      y2 = p2.y * 10 + 5; // Ekor Ular
-
+      y1 = p1.y * 10 + 5,
+      x2 = p2.x * 10 + 5,
+      y2 = p2.y * 10 + 5;
     let dx = x2 - x1,
       dy = y2 - y1;
 
-    // Kalkulasi kurva kelokan S (Bézier Control Points)
     let cp1x = x1 + dx * 0.2 - dy * 0.4;
     let cp1y = y1 + dy * 0.2 + dx * 0.4;
     let cp2x = x1 + dx * 0.8 + dy * 0.4;
     let cp2y = y1 + dy * 0.8 - dx * 0.4;
 
-    // Badan Ular (Garis Luar Tebal / Outline)
-    svgStr += `<path d="M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}" stroke="#064e3b" stroke-width="2.8" fill="none" stroke-linecap="round" filter="url(#shadow)"/>`;
-    // Corak Dalam Badan Ular (Putus-putus)
+    svgStr += `<path d="M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}" stroke="#064e3b" stroke-width="2.8" fill="none" stroke-linecap="round"/>`;
     svgStr += `<path d="M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}" stroke="#10b981" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-dasharray="1.5 1.5"/>`;
-
-    // Kepala Ular (Warna Merah supaya seram)
-    svgStr += `<circle cx="${x1}" cy="${y1}" r="1.8" fill="#dc2626" filter="url(#shadow)"/>`;
-    // 2 Mata Ular
+    svgStr += `<circle cx="${x1}" cy="${y1}" r="1.8" fill="#dc2626"/>`;
     svgStr += `<circle cx="${x1 - 0.5}" cy="${y1 - 0.5}" r="0.4" fill="white"/>`;
     svgStr += `<circle cx="${x1 + 0.5}" cy="${y1 - 0.5}" r="0.4" fill="white"/>`;
   }
@@ -411,23 +397,26 @@ function renderAllPawns(forceRebuild = false) {
 }
 
 function updateTurnUI() {
-  const cp = players[currentPlayerIndex],
-    btnRoll = document.getElementById("btn-roll");
+  if (players.length === 0) return;
+  const cp = players[currentPlayerIndex];
+  if (!cp) return;
+  const btnRoll = document.getElementById("btn-roll");
+
   document.getElementById("cp-name").innerText = cp.name;
   document.getElementById("cp-icon").innerText = cp.icon;
   document.getElementById("cp-name").style.color = cp.color;
 
   if (gameMode === "online") {
-    btnRoll.disabled = cp.id !== window.myUserId;
+    btnRoll.disabled = cp.id !== window.myUserId || isMoving;
     btnRoll.innerText =
       cp.id === window.myUserId ? "LEMPAR DADU" : "MENUNGGU LAWAN...";
     btnRoll.className = btnRoll.disabled
-      ? "bg-gray-400 text-white font-black text-xl py-3 px-10 rounded-full cursor-not-allowed opacity-50"
-      : "bg-gradient-to-r from-orange-400 to-orange-500 hover:scale-105 text-white font-black text-xl py-3 px-10 rounded-full shadow-lg transform transition-all";
+      ? "bg-slate-400 text-white font-black text-lg md:text-xl py-3.5 md:py-4 px-8 md:px-12 rounded-full cursor-not-allowed opacity-75 w-[90%] max-w-[280px]"
+      : "z-10 bg-gradient-to-b from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white font-black text-lg md:text-xl py-3.5 md:py-4 px-8 md:px-12 rounded-full shadow-[0_6px_0_#9a3412] active:shadow-[0_0px_0_#9a3412] active:translate-y-1.5 transition-all w-[90%] max-w-[280px]";
   } else {
-    btnRoll.disabled = cp.isBot;
+    btnRoll.disabled = cp.isBot || isMoving;
     btnRoll.innerText = cp.isBot ? "KOMPUTER BERFIKIR..." : "LEMPAR DADU";
-    if (cp.isBot) setTimeout(window.rollDiceLocally, 1500);
+    if (cp.isBot && !isMoving) setTimeout(window.rollDiceLocally, 1500);
   }
 }
 
@@ -438,13 +427,14 @@ function updateLeaderboard() {
   const lb = document.getElementById("leaderboard");
   lb.innerHTML = "";
   sorted.forEach((p) => {
+    let isCurrentTurn = p.id === players[currentPlayerIndex]?.id;
     lb.innerHTML += `
-      <div class="flex items-center justify-between p-2 rounded-lg border ${p.id === players[currentPlayerIndex].id ? "bg-green-100" : "bg-white"}">
-          <div class="flex items-center gap-2 font-bold">
-              <span class="w-8 h-8 rounded-full flex justify-center items-center text-sm shadow-sm" style="background-color: ${p.color}">${p.icon}</span>
-              <span class="text-sm truncate w-20">${p.name}</span>
+      <div class="flex items-center justify-between p-2.5 rounded-xl border-2 ${isCurrentTurn ? "bg-green-100 border-green-300" : "bg-slate-50 border-slate-100"}">
+          <div class="flex items-center gap-3 font-bold">
+              <span class="w-8 h-8 rounded-full flex justify-center items-center text-sm shadow-sm border border-white" style="background-color: ${p.color}">${p.icon}</span>
+              <span class="text-sm truncate w-24 text-slate-700">${p.name}</span>
           </div>
-          <div class="text-right font-black text-green-700">${p.pos}</div>
+          <div class="text-right font-black text-green-700 text-lg">${p.pos}</div>
       </div>`;
   });
 }
@@ -456,14 +446,17 @@ window.rollDiceLocally = function () {
     players[currentPlayerIndex].id !== window.myUserId
   )
     return;
+
   isMoving = true;
   document.getElementById("btn-roll").disabled = true;
   const diceRoll = Math.floor(Math.random() * 6) + 1;
   const diceEl = document.getElementById("dice");
   diceEl.classList.add("rolling");
   SFX.dice();
+
   if (gameMode === "online")
     window.sendOnlineAction("roll", { diceValue: diceRoll });
+
   setTimeout(() => {
     diceEl.classList.remove("rolling");
     diceEl.innerText = diceRoll;
@@ -482,6 +475,7 @@ function executeMove(diceRoll) {
   } else {
     for (let i = p.pos + 1; i <= targetCell; i++) moves.push(i);
   }
+
   let moveIdx = 0;
   function step() {
     if (moveIdx < moves.length) {
@@ -498,6 +492,49 @@ function executeMove(diceRoll) {
       setTimeout(step, 300);
     } else {
       checkCellEvent(diceRoll);
+    }
+  }
+  step();
+}
+
+function animateRemoteMove(pIdx, diceRoll) {
+  let p = players[pIdx];
+  let targetCell = p.pos + diceRoll;
+  let moves = [];
+  if (targetCell > 100) {
+    let over = targetCell - 100;
+    for (let i = p.pos + 1; i <= 100; i++) moves.push(i);
+    for (let i = 99; i >= 100 - over; i--) moves.push(i);
+  } else {
+    for (let i = p.pos + 1; i <= targetCell; i++) moves.push(i);
+  }
+
+  let moveIdx = 0;
+  isMoving = true;
+
+  function step() {
+    if (moveIdx < moves.length) {
+      p.pos = moves[moveIdx];
+      renderAllPawns();
+      SFX.move();
+      let pawnEl = document.getElementById(`pawn-${pIdx}`);
+      if (pawnEl) {
+        pawnEl.classList.remove("hopping");
+        void pawnEl.offsetWidth;
+        pawnEl.classList.add("hopping");
+      }
+      moveIdx++;
+      setTimeout(step, 300);
+    } else {
+      isMoving = false;
+      // Jika saat animasi berjalan ada data sinkronisasi baru dari server, aplikasikan sekarang
+      if (pendingPlayersSync) {
+        players = pendingPlayersSync;
+        pendingPlayersSync = null;
+      }
+      renderAllPawns();
+      updateLeaderboard();
+      updateTurnUI();
     }
   }
   step();
@@ -574,8 +611,8 @@ function triggerQuestion(diceRoll) {
   q.options.forEach((opt, idx) => {
     let btn = document.createElement("button");
     btn.className =
-      "w-full text-left bg-gray-50 border-2 font-bold p-4 rounded-xl flex items-center gap-3";
-    btn.innerHTML = `<div class="w-8 h-8 rounded-lg bg-gray-200 flex items-center justify-center font-black">${String.fromCharCode(65 + idx)}</div> <span>${opt}</span>`;
+      "w-full text-left bg-slate-50 hover:bg-yellow-50 border-2 border-slate-200 hover:border-yellow-400 font-bold p-4 rounded-xl flex items-center gap-3 transition";
+    btn.innerHTML = `<div class="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center font-black text-slate-600">${String.fromCharCode(65 + idx)}</div> <span>${opt}</span>`;
     btn.onclick = () => window.answerQuestion(idx);
     optionsDiv.appendChild(btn);
   });
@@ -617,12 +654,11 @@ window.showInfoModal = function (title, desc, callback) {
   window.infoModalCallback = callback;
 };
 
-// BUG FIX UNTUK DADU 6 ADA DI SINI
 window.closeInfoModal = function () {
   window.closeModal("modal-info");
   if (window.infoModalCallback) {
     const cb = window.infoModalCallback;
-    window.infoModalCallback = null; // Kosongkan dulu sebelum dieksekusi agar tidak bentrok
+    window.infoModalCallback = null;
     cb();
   }
 };
@@ -688,8 +724,55 @@ function handleWin() {
     updateDoc(doc(window.db, "rooms", roomCode), { status: "finished" });
 }
 
-window.quitGame = function () {
-  if (confirm("Kembali ke menu utama?")) window.showPage("page-landing");
+// BUG FIX 2: Fitur "Keluar Permainan" agar akun tidak nyangkut di server
+window.quitGame = async function () {
+  if (confirm("Yakin ingin keluar dan kembali ke menu utama?")) {
+    if (gameMode === "online" && roomCode) {
+      try {
+        const roomRef = doc(window.db, "rooms", roomCode);
+        const docSnap = await getDoc(roomRef);
+        if (docSnap.exists()) {
+          let data = docSnap.data();
+          let newPlayers = data.players.filter((p) => p.id !== window.myUserId);
+
+          if (newPlayers.length > 0) {
+            let newTurn = data.turn;
+            let leftPlayerIndex = data.players.findIndex(
+              (p) => p.id === window.myUserId,
+            );
+
+            // Atur giliran agar tidak macet jika yang keluar adalah yang sedang main
+            if (leftPlayerIndex === data.turn) {
+              newTurn = newTurn % newPlayers.length;
+            } else if (leftPlayerIndex < data.turn) {
+              newTurn = data.turn - 1;
+            }
+
+            // Pindahkan Host jika yang keluar adalah Host
+            let newHostId =
+              data.hostId === window.myUserId ? newPlayers[0].id : data.hostId;
+
+            await updateDoc(roomRef, {
+              players: newPlayers,
+              turn: newTurn,
+              hostId: newHostId,
+              lastAction: {
+                id: Math.random().toString(36).substring(2, 9),
+                type: "leave",
+                userId: window.myUserId,
+                name: data.players[leftPlayerIndex].name,
+              },
+            });
+          }
+        }
+      } catch (e) {
+        console.error("Gagal menghapus pemain dari server:", e);
+      }
+
+      if (window.roomUnsubscribe) window.roomUnsubscribe();
+    }
+    window.showPage("page-landing");
+  }
 };
 
 window.createRoom = async function () {
@@ -740,8 +823,8 @@ window.joinRoom = async function () {
   if (!docSnap.exists()) return alert("Ruangan tidak ditemukan!");
 
   let data = docSnap.data();
-  if (data.status !== "waiting") return alert("Sudah mulai.");
-  if (data.players.length >= 4) return alert("Penuh.");
+  if (data.status !== "waiting") return alert("Permainan sudah dimulai.");
+  if (data.players.length >= 4) return alert("Ruangan penuh.");
 
   if (!data.players.find((p) => p.id === window.myUserId)) {
     data.players.push({
@@ -775,6 +858,7 @@ function listenToRoom(code) {
     (docSnap) => {
       if (!docSnap.exists()) return;
       const data = docSnap.data();
+
       if (data.status === "waiting") {
         document.getElementById("lobby-players").innerHTML = data.players
           .map(
@@ -783,17 +867,33 @@ function listenToRoom(code) {
           )
           .join("");
       }
+
       if (data.status === "playing" && gameState !== "playing") {
         players = data.players;
         initGameUI();
       }
+
       if (data.status === "playing" && gameState === "playing") {
+        window.isHost = data.hostId === window.myUserId;
+
+        // Proses pergerakan aksi pemain lain
+        if (
+          data.lastAction &&
+          data.lastAction.id !== window.lastLocalActionId
+        ) {
+          processServerAction(data);
+        } else {
+          // Jika tidak ada trigger aksi khusus, pastikan array sinkron di latar belakang (kecuali saat animasi)
+          if (!isMoving && data.lastAction?.type !== "roll") {
+            players = data.players;
+          }
+        }
+
+        // Update UI Giliran jika giliran berubah (bisa berubah saat turn advance atau saat orang leave)
         if (currentPlayerIndex !== data.turn) {
           currentPlayerIndex = data.turn;
           updateTurnUI();
         }
-        if (data.lastAction && data.lastAction.id !== window.lastLocalActionId)
-          processServerAction(data);
       }
     },
   );
@@ -816,21 +916,41 @@ window.sendOnlineAction = async function (type, updates = {}) {
 
 function processServerAction(data) {
   window.lastLocalActionId = data.lastAction.id;
-  players = data.players;
+
   if (data.lastAction.type === "roll") {
+    // BUG FIX 1: Tampilkan Animasi Lompat untuk Teman
+    const pIdx = players.findIndex((p) => p.id === data.lastAction.userId);
     const diceEl = document.getElementById("dice");
     diceEl.innerText = data.lastAction.diceValue;
     diceEl.classList.add("rolling");
     SFX.dice();
+
     setTimeout(() => {
       diceEl.classList.remove("rolling");
+      if (pIdx !== -1) animateRemoteMove(pIdx, data.lastAction.diceValue);
+    }, 600);
+  } else if (data.lastAction.type === "leave") {
+    // BUG FIX 2: Menangani pemain yang keluar saat online
+    isMoving = false; // Menghentikan animasi jika ada
+    players = data.players;
+    renderAllPawns(true); // Redraw ulang pion untuk menghilangkan pemain yang pergi
+    updateLeaderboard();
+
+    alert(`Pemain "${data.lastAction.name}" telah keluar dari permainan.`);
+
+    // Auto-win jika tinggal sisa 1 orang
+    if (players.length === 1 && players[0].id === window.myUserId) {
+      alert("Semua lawan telah keluar. Anda otomatis memenangkan permainan!");
+      handleWin();
+    }
+  } else {
+    // "sync" action biasa (Tangga, Ular, Poin)
+    if (isMoving) {
+      pendingPlayersSync = data.players; // Simpan data untuk diterapkan setelah animasi selesai
+    } else {
+      players = data.players;
       renderAllPawns();
       updateLeaderboard();
-    }, 600);
-  } else {
-    renderAllPawns();
-    updateLeaderboard();
+    }
   }
 }
-
-window.showPage("page-landing");
